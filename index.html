@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>API 데이터 추출 (순위 포함, 천단위 표시)</title>
+<style>
+  body { font-family: Arial; margin: 20px; }
+  input { width: 600px; padding: 5px; }
+  button { padding: 5px 10px; margin-left: 10px; }
+  table { border-collapse: collapse; margin-top: 20px; width: 100%; max-width: 700px; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+  th { background: #f2f2f2; }
+  tr:nth-child(even) { background: #f9f9f9; }
+</style>
+</head>
+<body>
+<h2>API 데이터 추출 (순위 포함, 천단위 표시)</h2>
+<p>아래 입력창에 API 주소를 넣어주세요.</p>
+<input type="text" id="apiUrl" 
+       value="https://api.ttinglive.com/api/channels/rankings?sort=eventWelcomeHost&limit=20&liveOption=&eventMonth=" 
+       onkeypress="handleKey(event)">
+<button onclick="fetchData()">데이터 가져오기</button>
+
+<table id="resultTable">
+  <tr>
+    <th>순위</th>
+    <th>닉네임</th>
+    <th>스폰서 수</th>
+  </tr>
+</table>
+
+<script>
+function handleKey(event) {
+  if (event.key === 'Enter') {
+    fetchData();
+  }
+}
+
+async function fetchData() {
+  const url = document.getElementById('apiUrl').value.trim();
+  if(!url) { alert('API 주소를 입력하세요.'); return; }
+
+  try {
+    const res = await fetch(`/api-proxy?url=${encodeURIComponent(url)}`);
+    const json = await res.json();
+
+    const table = document.getElementById('resultTable');
+    table.innerHTML = '<tr><th>순위</th><th>닉네임</th><th>스폰서 수</th></tr>';
+
+    if(!json.data || !Array.isArray(json.data)) { 
+      alert('data 항목이 없거나 형식이 올바르지 않습니다.'); 
+      return; 
+    }
+
+    json.data.forEach((item, index) => {
+      const row = table.insertRow();
+      row.insertCell(0).textContent = index + 1; // 순위
+      row.insertCell(1).textContent = item.owner.nickname;
+      row.insertCell(2).textContent = item.stat.numberOfSponsor.toLocaleString(); // 천단위 표시
+    });
+
+  } catch (err) {
+    alert('데이터를 가져오는데 실패했습니다.');
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
